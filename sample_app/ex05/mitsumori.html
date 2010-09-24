@@ -1,0 +1,34 @@
+<DOCTYPE html>
+<html>
+<head>
+<style>
+	input.param{width:90%}
+</style>
+<script src='../mitsumori.vbs' language='VBScript'></script>
+
+<script language='JavaScript' src="jquery-1.4.2.min.js"></script>
+<script language='JavaScript'>
+jQuery(function($){
+	var basePath = function (url){
+		return url.substring(0,url.lastIndexOf('/'));
+	}
+	$('#xlsPath').val( basePath( basePath(location.href) ) + '/' + $('#xlsPath').val() );
+
+	$('#show').click(function(){
+		generateReport($('#xlsPath').val(), $('#mapPath').val(), $('#datPath').val());
+	});
+});
+</script>
+</head>
+<body>
+	<dl>
+		<dt>layout.xls</dt>
+		<dd><input id='xlsPath' class="param" value='mitsumori.xls'/></dd>
+		<dt>map.xml</dt>
+		<dd><input id='mapPath' class="param" value='mitsumori_map.xml'/></dd>
+		<dt>data.xml</dt>
+		<dd><input id='datPath' class="param" value='mitsumori_dat.xml'/></dd>
+	</dl>
+	<button id='show'>Generate Report</button>
+</body>
+</html>

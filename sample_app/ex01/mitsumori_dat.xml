@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="Shift_JIS"?>
+<dat>
+<page>
+<sheet name="見積書">
+	<No>値0</No>
+	<customer>値1</customer>
+	<delivery_date>値2</delivery_date>
+	<valid_date>値3</valid_date>
+	<products1>値4</products1>
+	<unit_price1>値5</unit_price1>
+	<quantity1>値6</quantity1>
+	<products2>値7</products2>
+	<unit_price2>値8</unit_price2>
+	<quantity2>値9</quantity2>
+	<products3>値10</products3>
+	<unit_price3>値11</unit_price3>
+	<quantity3>値12</quantity3>
+	<products4>値13</products4>
+	<unit_price4>値14</unit_price4>
+	<quantity4>値15</quantity4>
+	<products5>値16</products5>
+	<unit_price5>値17</unit_price5>
+	<quantity5>値18</quantity5>
+	<products6>値19</products6>
+	<unit_price6>値20</unit_price6>
+	<quantity6>値21</quantity6>
+	<products7>値22</products7>
+	<unit_price7>値23</unit_price7>
+	<quantity7>値24</quantity7>
+	<products8>値25</products8>
+	<unit_price8>値26</unit_price8>
+	<quantity8>値27</quantity8>
+	<products9>値28</products9>
+	<unit_price9>値29</unit_price9>
+	<quantity9>値30</quantity9>
+	<products10>値31</products10>
+	<unit_price10>値32</unit_price10>
+	<quantity10>値33</quantity10></sheet>
+</page>
+</dat>

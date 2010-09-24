@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="Shift_JIS" standalone="yes" ?>
+<package>
+	<job id="reportGenerator">
+	<?job error="true" debug="false" ?>
+	<runtime>
+		<description>帳票出力プログラムの自動生成</description>
+		<unnamed name="mapFileFullPath" helpstring="マッピングファイル生成用エクセルファイルのパス" many="False" required="1"/>
+		<example>
+使用例 :
+
+reportGenerator.wsf "c:\temp\report.map.xls"
+		</example>
+	</runtime>
+
+	<object id="objDatXml" progid="Msxml2.DOMDocument" />
+	<object id="objMapXml" progid="Msxml2.DOMDocument" />
+	<object id="WshShell" progid="WScript.Shell" />
+	<object id="objXLS" progid="Excel.Application" />
+	<script language="VBScript" src="./lib/init.vbs"/>
+	<script language="VBScript">
+
+	<![CDATA[
+
+		Class FileUtilClass
+
+			Public baseFolder,fileSystemObject
+			Private objFs
+
+			Private Sub Class_Initialize()
+				Set fileSystemObject = CreateObject("Scripting.FileSystemObject")
+				Set objFs = fileSystemObject
+				baseFolder = objFs.GetParentFolderName(WScript.ScriptFullName)
+				'WshShell.CurrentDirectory
+			End Sub
+
+			Function CreateChildFolder(name)
+				Dim path
+				path = baseFolder & "\" & name
+				If Not objFs.FolderExists(path) Then
+					objFs.CreateFolder(path)
+				End If
+				CreateChildFolder = path
+			End Function
+
+		End Class
+
+		Function main (mapFileFullPath)
+
+			msgbox "処理完了のメッセージが表示されるまで、しばらくお待ちください。"
+
+			Dim fileUtil,objFs,objFile
+			Dim resultFolder,sample1Folder,sample2Folder,libFolder,srcFolder
+			Dim baseFile,mapFile,xlsFile,datXml,mapXml
+			Dim varCell,varLen,mapBook,nodeSheet,nodeCol,nodeText
+			Dim i,j,x,y
+			set fileUtil = New FileUtilClass
+			set objFs = fileUtil.fileSystemObject
+
+			'環境変数の設定
+
+			baseFile = objFs.GetBaseName(mapFileFullPath)
+			baseFile = Mid(baseFile,1,len(baseFile) - len(MAP_EXT))
+			mapFile = objFs.GetFileName(mapFileFullPath)
+			xlsFile = baseFile & ".xls"
+			mapXml = baseFile & MAP_EXT & ".xml"
+			datXml = baseFile & DAT_EXT & ".xml"
+
+			resultFolder = fileUtil.CreateChildFolder("result_" & baseFile)
+			sample1Folder = fileUtil.CreateChildFolder("result_" & baseFile & "\html_sample")
+			sample2Folder = fileUtil.CreateChildFolder("result_" & baseFile & "\bat_sample")
+			libFolder = fileUtil.baseFolder & "\lib" 
+			srcFolder = objFS.GetParentFolderName(mapFileFullPath)
+
+
+			If Not objFs.FileExists(srcFolder & "\" & xlsFile) Then
+				msgbox srcFolder & "\" & xlsFile & "が見つかりません"
+				exit Function
+			End If
+
+			'ファイルのコピー
+
+			objFs.CopyFile libFolder & "\" & GEN_FILE_NAME, resultFolder & "\" & baseFile & ".vbs"
+			objFs.CopyFile libFolder & "\" & JQUERY_NAME, sample1Folder & "\" & JQUERY_NAME
+			objFs.CopyFile srcFolder & "\" & xlsFile, resultFolder & "\" & xlsFile
+
+			'マッピングファイルの生成
+
+			objXLS.Visible	=	false
+			set mapBook	=	objXLS.workbooks.open(mapFileFullPath)
+			objMapXml.documentElement = objMapXml.createElement("map")
+			With mapBook
+				For i=1 To .sheets.count
+					set nodeSheet = objMapXml.createElement("sheet")
+					nodeSheet.setAttribute "name" ,.sheets(i).name
+					for x=1 to SEARCH_MAP_X
+						for y=1 to SEARCH_MAP_Y
+							varCell = .sheets(i).cells(x,y)
+							If TypeName(varCell) <> "Error" Then
+								varLen	=	len(varCell)
+								if varLen > 0 then
+									if mid(varCell,1,1) = "{" and mid(varCell,varLen,1) = "}" then
+										set nodeCol 	= objMapXml.createElement(mid(varCell,2,varLen-2))
+										set nodeText	=	objMapXml.createTextNode(x & "," & y)
+										nodeCol.appendChild nodeText
+										nodeSheet.appendChild objMapXml.createTextNode(vbcr)
+										nodeSheet.appendChild nodeCol
+									end if
+								end if
+							End If
+						next
+					next
+					objMapXml.documentElement.appendChild objMapXml.createTextNode(vbcr)
+					objMapXml.documentElement.appendChild nodeSheet
+				Next
+			End With
+			set objFile = objFs.CreateTextFile(resultFolder & "\" & mapXml)
+			objFile.WriteLine("<?xml version=""1.0"" encoding=""Shift_JIS""?>")
+			objFile.WriteLine(objMapXml.xml)
+			objFile.close
+
+			'サンプルデータの生成
+
+			objDatXml.async = false
+			objDatXml.Load(resultFolder & "\" & mapXml)
+			set objFile = objFs.CreateTextFile(sample1Folder & "\" & datXml)
+			objFile.WriteLine("<?xml version=""1.0"" encoding=""Shift_JIS""?>")
+			objFile.WriteLine("<dat>")
+			objFile.WriteLine("<page>")
+			set nodeSheet = objDatXml.documentElement.getElementsByTagName("sheet")
+			For i = 0 to nodeSheet.length-1
+				With nodeSheet(i).childNodes
+					For	j = 0 to .Length-1
+						.item(j).text = "値" & j
+					Next
+				End With
+				objFile.WriteLine(nodeSheet(i).xml)
+			Next
+			objFile.WriteLine("</page>")
+			objFile.WriteLine("</dat>")
+			objFile.close
+			mapBook.close
+			objFs.CopyFile sample1Folder & "\" & datXml, sample2Folder & "\" & datXml
+
+			'WEBサンプルの生成
+
+			set objFile = objFs.CreateTextFile(sample1Folder & "\" & baseFile & ".html")
+			objFile.WriteLine("<DOCTYPE html>")
+			objFile.WriteLine("<html>")
+			objFile.WriteLine("<head>")
+			objFile.WriteLine("<style>")
+			objFile.WriteLine("	input.param{width:90%}")
+			objFile.WriteLine("</style>")
+			objFile.WriteLine("<script src='../mitsumori.vbs' language='VBScript'></script>")
+			objFile.WriteLine("")
+			objFile.WriteLine("<script language='JavaScript' src=""jquery-1.4.2.min.js""></script>")
+			objFile.WriteLine("<script language='JavaScript'>")
+			objFile.WriteLine("jQuery(function($){")
+			objFile.WriteLine("	var selfPath = location.href.substring(0,location.href.lastIndexOf('/')+1);")
+			objFile.WriteLine("	var parentPath = selfPath.substring(0,selfPath.lastIndexOf('/',selfPath.length-2)+1);")
+			objFile.WriteLine("	var param = $('input.param');")
+			objFile.WriteLine("	param.each(function(idx){")
+			objFile.WriteLine("		var elem = param.eq(idx);")
+			objFile.WriteLine("		param.eq(idx).val( (elem.attr('id') == 'datPath' ? selfPath : parentPath) + param.eq(idx).val());")
+			objFile.WriteLine("	});")
+			objFile.WriteLine("	$('#show').click(function(){")
+			objFile.WriteLine("		generateReport($('#xlsPath').val(), $('#mapPath').val(), $('#datPath').val());")
+			objFile.WriteLine("	});")
+			objFile.WriteLine("});")
+			objFile.WriteLine("</script>")
+			objFile.WriteLine("</head>")
+			objFile.WriteLine("<body>")
+			objFile.WriteLine("	<dl>")
+			objFile.WriteLine("		<dt>layout.xls</dt>")
+			objFile.WriteLine("		<dd><input id='xlsPath' class=""param"" value='mitsumori.xls'/></dd>")
+			objFile.WriteLine("		<dt>map.xml</dt>")
+			objFile.WriteLine("		<dd><input id='mapPath' class=""param"" value='mitsumori_map.xml'/></dd>")
+			objFile.WriteLine("		<dt>data.xml</dt>")
+			objFile.WriteLine("		<dd><input id='datPath' class=""param"" value='mitsumori_dat.xml'/></dd>")
+			objFile.WriteLine("	</dl>")
+			objFile.WriteLine("	<button id='show'>Generate Report</button>")
+			objFile.WriteLine("</body>")
+			objFile.WriteLine("</html>")
+			objFile.close
+
+			'スタンドアローンサンプルの生成
+
+			set objFile = objFs.CreateTextFile(sample2Folder & "\" & baseFile & ".bat")
+			objFile.WriteLine(baseFile & ".wsf """ & resultFolder & "\" & xlsFile & """ """ & resultFolder & "\" & mapXml & """ """ & sample2Folder & "\" & datXml & """")
+			objFile.close
+			set objFile = objFs.CreateTextFile(sample2Folder & "\" & baseFile & ".wsf")
+			objFile.WriteLine("<?xml version=""1.0"" encoding=""Shift_JIS"" standalone=""yes"" ?>")
+			objFile.WriteLine("<package>")
+			objFile.WriteLine("  <job id=""" & baseFile & """>")
+			objFile.WriteLine("  <?job error=""true"" debug=""false"" ?>")
+			objFile.WriteLine("  <script language=""VBScript"" src=""..\" & baseFile & ".vbs""/>")
+			objFile.WriteLine("  <script language=""VBScript"">")
+			objFile.WriteLine("  <![CDATA" & "[")
+			objFile.WriteLine("		Dim xls,map,dat")
+			objFile.WriteLine("		If WScript.Arguments.length < 3 Then")
+			objFile.WriteLine("		  WScript.Arguments.ShowUsage")
+			objFile.WriteLine("		  WScript.Quit")
+			objFile.WriteLine("		End If")
+			objFile.WriteLine("		Set objArgs = WScript.Arguments")
+			objFile.WriteLine("		For idx = 0 to objArgs.Count - 1")
+			objFile.WriteLine("		select case idx")
+			objFile.WriteLine("			case	0	xls	= objArgs(idx)")
+			objFile.WriteLine("			case	1	map	= objArgs(idx)")
+			objFile.WriteLine("			case	2	dat	= objArgs(idx)")
+			objFile.WriteLine("		end select")
+			objFile.WriteLine("		Next")
+			objFile.WriteLine("		call generateReport(xls,map,dat)")
+			objFile.WriteLine("  ]" & "]>")
+			objFile.WriteLine("  </script>")
+			objFile.WriteLine("  </job>")
+			objFile.WriteLine("</package>")
+			objFile.close
+
+			objXLS.quit
+
+			msgbox "生成処理が完了しました。"
+
+		End Function
+
+		Dim mapFileFullPath,idx
+
+		If WScript.Arguments.length<1 Then
+			WScript.Arguments.ShowUsage
+			WScript.Quit
+		End If
+		Set objArgs = WScript.Arguments
+		For idx = 0 to objArgs.Count - 1
+			select case idx
+				case	0	mapFileFullPath	= objArgs(idx)
+			end select
+		Next
+
+		call main(mapFileFullPath)
+
+  ]]>
+  </script>
+  </job>
+</package>

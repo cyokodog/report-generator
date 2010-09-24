@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="Shift_JIS"?>
+<dat>
+<page>
+<sheet name="見積書" newName="M00001">
+	<No>M00001</No>
+	<customer>（株）東京テック</customer>
+	<delivery_date>2010/10/10</delivery_date>
+	<valid_date>2010/12/10</valid_date>
+	<products1>ノートパソコン</products1>
+	<unit_price1>150000</unit_price1>
+	<quantity1>30</quantity1>
+	<products2>プリンター</products2>
+	<unit_price2>40000</unit_price2>
+	<quantity2>15</quantity2>
+</sheet>
+<sheet name="見積書" newName="M00002">
+	<No>M00002</No>
+	<customer>（株）東京テック</customer>
+	<delivery_date>2010/10/30</delivery_date>
+	<valid_date>2010/11/10</valid_date>
+	<products1>デスクトップパソコン</products1>
+	<unit_price1>100000</unit_price1>
+	<quantity1>10</quantity1>
+	<products2>ＰＣデスク</products2>
+	<unit_price2>50000</unit_price2>
+	<quantity2>5</quantity2>
+</sheet>
+</page>
+</dat>
