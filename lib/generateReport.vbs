@@ -1,3 +1,6 @@
+'
+' ReportGenerator Version 0.2.1
+'
 Class GenerateReportClass
 
 	Public LAYOUTBOOK
@@ -53,6 +56,10 @@ Class GenerateReportClass
 		OBJWSH.AppActivate OBJXLS
 
 		set LAYOUTBOOK	=	OBJXLS.workbooks.open(xlsPath)
+		OBJXLS.Visible	=	false
+		OBJXLS.Visible	=	true
+
+
 		set NEWBOOK	=	OBJXLS.Workbooks.Add
 		NEWBOOK.Application.DisplayAlerts = False
 
@@ -106,6 +113,7 @@ Class GenerateReportClass
 
 		if autoClose = true then
 			LAYOUTBOOK.close
+			set LAYOUTBOOK = Nothing
 		end if
 
 		With NEWBOOK

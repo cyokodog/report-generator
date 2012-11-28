@@ -61,8 +61,10 @@ reportGenerator.wsf "c:\temp\report.map.xls"
 			baseFile = objFs.GetBaseName(mapFileFullPath)
 			baseFile = Mid(baseFile,1,len(baseFile) - len(MAP_EXT))
 			mapFile = objFs.GetFileName(mapFileFullPath)
-			xlsFile = baseFile & ".xls"
-			mapXml = baseFile & MAP_EXT & ".xml"
+'			xlsFile = baseFile & ".xls"
+			xlsFile = baseFile & XLS_EXT
+
+			mapXml = baseFile & ".xml"
 			datXml = baseFile & DAT_EXT & ".xml"
 
 			resultFolder = fileUtil.CreateChildFolder("result_" & baseFile)
@@ -73,27 +75,30 @@ reportGenerator.wsf "c:\temp\report.map.xls"
 
 
 			If Not objFs.FileExists(srcFolder & "\" & xlsFile) Then
-				msgbox srcFolder & "\" & xlsFile & "が見つかりません"
-				exit Function
+'				msgbox srcFolder & "\" & xlsFile & "が見つかりません"
+'				exit Function
 			End If
 
 			'ファイルのコピー
 
 			objFs.CopyFile libFolder & "\" & GEN_FILE_NAME, resultFolder & "\" & baseFile & ".vbs"
 			objFs.CopyFile libFolder & "\" & JQUERY_NAME, sample1Folder & "\" & JQUERY_NAME
-			objFs.CopyFile srcFolder & "\" & xlsFile, resultFolder & "\" & xlsFile
+'			objFs.CopyFile srcFolder & "\" & xlsFile, resultFolder & "\" & xlsFile
+			objFs.CopyFile srcFolder & "\" & mapFile, resultFolder & "\" & xlsFile
+
 
 			'マッピングファイルの生成
 
 			objXLS.Visible	=	false
-			set mapBook	=	objXLS.workbooks.open(mapFileFullPath)
+'			set mapBook	=	objXLS.workbooks.open(mapFileFullPath)
+			set mapBook	=	objXLS.workbooks.open(resultFolder & "\" & xlsFile)
 			objMapXml.documentElement = objMapXml.createElement("map")
 			With mapBook
 				For i=1 To .sheets.count
 					set nodeSheet = objMapXml.createElement("sheet")
 					nodeSheet.setAttribute "name" ,.sheets(i).name
-					for x=1 to SEARCH_MAP_X
-						for y=1 to SEARCH_MAP_Y
+					for x=1 to SEARCH_MAP_Y
+						for y=1 to SEARCH_MAP_X
 							varCell = .sheets(i).cells(x,y)
 							If TypeName(varCell) <> "Error" Then
 								varLen	=	len(varCell)
@@ -104,6 +109,7 @@ reportGenerator.wsf "c:\temp\report.map.xls"
 										nodeCol.appendChild nodeText
 										nodeSheet.appendChild objMapXml.createTextNode(vbcr)
 										nodeSheet.appendChild nodeCol
+										.sheets(i).cells(x,y) = ""
 									end if
 								end if
 							End If
@@ -138,7 +144,7 @@ reportGenerator.wsf "c:\temp\report.map.xls"
 			objFile.WriteLine("</page>")
 			objFile.WriteLine("</dat>")
 			objFile.close
-			mapBook.close
+			mapBook.close(true)
 			objFs.CopyFile sample1Folder & "\" & datXml, sample2Folder & "\" & datXml
 
 			'WEBサンプルの生成
@@ -150,7 +156,7 @@ reportGenerator.wsf "c:\temp\report.map.xls"
 			objFile.WriteLine("<style>")
 			objFile.WriteLine("	input.param{width:90%}")
 			objFile.WriteLine("</style>")
-			objFile.WriteLine("<script src='../mitsumori.vbs' language='VBScript'></script>")
+			objFile.WriteLine("<script src='../" & baseFile & ".vbs' language='VBScript'></script>")
 			objFile.WriteLine("")
 			objFile.WriteLine("<script language='JavaScript' src=""jquery-1.4.2.min.js""></script>")
 			objFile.WriteLine("<script language='JavaScript'>")
@@ -171,11 +177,11 @@ reportGenerator.wsf "c:\temp\report.map.xls"
 			objFile.WriteLine("<body>")
 			objFile.WriteLine("	<dl>")
 			objFile.WriteLine("		<dt>layout.xls</dt>")
-			objFile.WriteLine("		<dd><input id='xlsPath' class=""param"" value='mitsumori.xls'/></dd>")
+			objFile.WriteLine("		<dd><input id='xlsPath' class=""param"" value='" & baseFile & XLS_EXT &"'/></dd>")
 			objFile.WriteLine("		<dt>map.xml</dt>")
-			objFile.WriteLine("		<dd><input id='mapPath' class=""param"" value='mitsumori_map.xml'/></dd>")
+			objFile.WriteLine("		<dd><input id='mapPath' class=""param"" value='" & baseFile & ".xml'/></dd>")
 			objFile.WriteLine("		<dt>data.xml</dt>")
-			objFile.WriteLine("		<dd><input id='datPath' class=""param"" value='mitsumori_dat.xml'/></dd>")
+			objFile.WriteLine("		<dd><input id='datPath' class=""param"" value='" & baseFile & "_dat.xml'/></dd>")
 			objFile.WriteLine("	</dl>")
 			objFile.WriteLine("	<button id='show'>Generate Report</button>")
 			objFile.WriteLine("</body>")
